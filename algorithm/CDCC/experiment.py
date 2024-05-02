@@ -4,6 +4,7 @@ import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 from algorithm.CDCC.CDCC import CDCC
 from algorithm.CDCC.dataset import Load_Dataset, MyDataset
+from algorithm.CDCC.dataset_unsupervised import Load_Dataset_Unsupervised, MyUnsupervisedDataset
 from torch.utils.data import DataLoader
 from algorithm.CDCC import contrastive_loss
 
@@ -170,16 +171,15 @@ class model():
         self.input_size = ds.shape[2]
 
         # Create a DataLoader for unsupervised dataset
-        dataset = Load_Dataset(ds)  # Assuming Load_Dataset can now handle ds without labels
+        dataset = Load_Dataset_Unsupervised(self, ds)  # Using the unsupervised dataset loader
         data_loader = DataLoader(dataset=dataset, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers, drop_last=self.drop_last)
 
-        
         # Initialize the model and optimizer
         self.model = CDCC(self).to(self.device)
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr, betas=(self.beta1, self.beta2),
-                                        weight_decay=self.weight_decay)
+                                    weight_decay=self.weight_decay)
         criterion_instance = contrastive_loss.InstanceLoss(self.batch_size, self.instance_temperature, self.device).to(self.device)
-        criterion_cluster = contrastive_loss.ClusterLoss(self.class_num, self.cluster_temperature, self.device).to(self.device)
+        criterion_cluster = contrastive_loss.ClusterLoss(self.num_classes, self.cluster_temperature, self.device).to(self.device)
         
         for epoch in range(1, self.epochs + 1):
             self.model.train()
@@ -187,10 +187,10 @@ class model():
             if epoch % 10 == 0:
                 print(f"Epoch {epoch}/{self.epochs}\tLoss: {loss_epoch}")
                 cb_progress(epoch / self.epochs)
-                
+
     def step_epoch_unsupervised(self, optimizer, dataset, criterion_instance, criterion_cluster, epoch):
         total_loss = 0
-        for step, (x_data, aug1, aug2) in enumerate(dataset):  # Notice labels are not loaded
+        for step, (x_data, aug1, aug2, x_data_f, aug1_f, aug2_f) in enumerate(dataset):  # Notice labels are not loaded
             optimizer.zero_grad()
             x_data = x_data.to(torch.float32).to(self.device)
             aug1 = aug1.to(torch.float32).to(self.device)
