@@ -45,9 +45,9 @@ def add_frequency(x, pertub_ratio=0,):
     return x+pertub_matrix
 
 def one_hot_encoding(X):
-    X = [int(x) for x in X]
-    n_values = np.max(X) + 1
-    b = np.eye(n_values)[X]
+    X = [int(x) for x in X]  # Ensure X is a list of integers
+    n_values = np.max(X) + 1  # Automatically determine the number of classes
+    b = np.eye(n_values)[X]  # Create a one-hot encoded matrix
     return b
 
 def DataTransform_T(data,model_params):
@@ -76,3 +76,35 @@ def DataTransform_F(sample, model_params):
     aug_F = aug_1 + aug_2
     return sample,aug_F
 
+
+def DataTransform_T_unsupervised(data, model_params):
+    aug_1 = jitter(data, model_params.jitter_ratio)
+    aug_2 = scaling(data, model_params.jitter_scale_ratio)
+    aug_3 = permutation(data, max_segments=model_params.max_seg)
+    aug_2 = torch.from_numpy(aug_2)  # Convert back to tensor if needed
+
+    li = np.random.randint(0, 3, size=[data.shape[0]])
+    li_onehot = one_hot_encoding(li)  # No need for num_classes
+
+    # Apply augmentations selectively based on one-hot encoding
+    aug_1 = torch.mul(aug_1, torch.from_numpy(li_onehot[:, 0]).unsqueeze(-1).unsqueeze(-1).float())
+    aug_2 = torch.mul(aug_2, torch.from_numpy(li_onehot[:, 1]).unsqueeze(-1).unsqueeze(-1).float())
+    aug_3 = torch.mul(aug_3, torch.from_numpy(li_onehot[:, 2]).unsqueeze(-1).unsqueeze(-1).float())
+
+    aug_T = aug_1 + aug_2 + aug_3
+    return data, aug_T
+
+
+def DataTransform_F_unsupervised(sample, model_params):
+    aug_1 = remove_frequency(sample, model_params.remove_frequency_ratio)
+    aug_2 = add_frequency(sample, model_params.add_frequency_ratio)
+
+    li = np.random.randint(0, 2, size=[sample.shape[0]])  # Two methods
+    li_onehot = one_hot_encoding(li)  # No need for num_classes
+
+    # Apply frequency-based augmentations
+    aug_1 = torch.mul(aug_1, torch.from_numpy(li_onehot[:, 0]).unsqueeze(-1).unsqueeze(-1).float())
+    aug_2 = torch.mul(aug_2, torch.from_numpy(li_onehot[:, 1]).unsqueeze(-1).unsqueeze(-1).float())
+
+    aug_F = aug_1 + aug_2
+    return sample, aug_F  # Return original and augmented frequency data

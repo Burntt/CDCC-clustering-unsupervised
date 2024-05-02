@@ -48,14 +48,14 @@ class CDCC(nn.Module):
             nn.Linear(configs.output_size, 256),
             nn.BatchNorm1d(256),
             nn.ReLU(),
-            nn.Linear(256, configs.class_num),
+            nn.Linear(256, configs.num_clusters),
             nn.Softmax(dim=1)
         )
         self.cluster_projector_f = nn.Sequential(
             nn.Linear(configs.CNNoutput_channel, 256),
             nn.BatchNorm1d(256),
             nn.ReLU(),
-            nn.Linear(256, configs.class_num),
+            nn.Linear(256, configs.num_clusters),
             nn.Softmax(dim=1)
         )
         self.Dropout1 = nn.Dropout(p=configs.dropout_rate)

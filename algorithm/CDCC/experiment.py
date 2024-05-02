@@ -21,7 +21,6 @@ class model():
         self.kernel_size = 8
         self.stride = 1
         self.final_out_channels = 64  # The number of convolutional network output channels
-        self.num_classes = None
         self.dropout = 0.30
         # --------------------------------
         self.epochs = 300
@@ -50,7 +49,8 @@ class model():
         self.add_frequency_ratio = 0.1
 
         # Parameters for the instance-level and cluster-level mapping networks
-        self.CNNoutput_channel = None
+        self.num_clusters = 10
+        self.CNNoutput_channel = 1152
         self.feature_dim = 256
         self.hidden_size = 1024
         self.output_size = 512
@@ -179,7 +179,7 @@ class model():
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr, betas=(self.beta1, self.beta2),
                                     weight_decay=self.weight_decay)
         criterion_instance = contrastive_loss.InstanceLoss(self.batch_size, self.instance_temperature, self.device).to(self.device)
-        criterion_cluster = contrastive_loss.ClusterLoss(self.num_classes, self.cluster_temperature, self.device).to(self.device)
+        criterion_cluster = contrastive_loss.ClusterLoss(self.num_clusters, self.cluster_temperature, self.device).to(self.device)
         
         for epoch in range(1, self.epochs + 1):
             self.model.train()

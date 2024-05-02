@@ -2,7 +2,7 @@ import torch
 from torch.fft import fft
 from torch.utils.data import Dataset
 import numpy as np
-from algorithm.CDCC.augmentations import DataTransform_T, DataTransform_F
+from algorithm.CDCC.augmentations import DataTransform_T_unsupervised, DataTransform_F_unsupervised
 
 class Load_Dataset_Unsupervised(Dataset):
     def __init__(self, model_params, ds):
@@ -26,8 +26,8 @@ class Load_Dataset_Unsupervised(Dataset):
         self.x_data_f = fft(x_data).abs()
         
         # Apply augmentations
-        self.aug1, self.aug2 = DataTransform_T(x_data, model_params)
-        self.aug1_f, self.aug2_f = DataTransform_F(self.x_data_f, model_params)
+        self.aug1, self.aug2 = DataTransform_T_unsupervised(x_data, model_params)
+        self.aug1_f, self.aug2_f = DataTransform_F_unsupervised(self.x_data_f, model_params)
 
     def __getitem__(self, index):
         return (self.x_data[index], self.aug1[index], self.aug2[index], 
