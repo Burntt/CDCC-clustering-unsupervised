@@ -1,0 +1,45 @@
+.
+├── algorithm
+│   ├── CDCC
+│   │   ├── augmentations.py
+│   │   ├── CDCC.py
+│   │   ├── contrastive_loss.py
+│   │   ├── copy_this_code.sh
+│   │   ├── dataset.py
+│   │   ├── experiment.py
+│   │   ├── __init__.py
+│   │   ├── lstm.py
+│   │   ├── __pycache__
+│   │   │   ├── augmentations.cpython-310.pyc
+│   │   │   ├── CDCC.cpython-310.pyc
+│   │   │   ├── contrastive_loss.cpython-310.pyc
+│   │   │   ├── dataset.cpython-310.pyc
+│   │   │   ├── experiment.cpython-310.pyc
+│   │   │   ├── __init__.cpython-310.pyc
+│   │   │   ├── lstm.cpython-310.pyc
+│   │   │   └── model.cpython-310.pyc
+│   │   ├── seed.py
+│   │   └── utils.py
+│   ├── __init__.py
+│   └── __pycache__
+│       └── __init__.cpython-310.pyc
+├── data
+│   └── test
+│       └── CBF
+│           ├── CBF
+│           │   ├── TEST.csv
+│           │   ├── TEST_label.csv
+│           │   ├── TRAIN.csv
+│           │   └── TRAIN_label.csv
+│           └── CBF.zip
+├── main_personal.py
+├── main_personal_unsupervised.py
+├── model_save
+│   └── CBF
+├── __pycache__
+│   └── data_config.cpython-310.pyc
+├── README.md
+├── requirements.txt
+└── tree.txt
+
+11 directories, 31 files
