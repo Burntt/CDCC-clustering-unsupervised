@@ -231,6 +231,93 @@ class model():
         embeddings = np.concatenate(embeddings, axis=0)
         return embeddings
 
+    def train_unsupervised(self, ds, cb_progress=lambda x: None):
+        if ds is None or len(ds) == 0:
+            raise ValueError("Dataset is empty or not loaded properly")
+        print(f"Dataset shape: {ds.shape}")  # Confirm dataset shape
+
+        print(ds)
+
+        # Ensure data is in the correct shape [num_instance, in_channel, series_length]
+        self.input_channels = ds.shape[1]
+        self.input_size = ds.shape[2]
+
+        # Create a DataLoader for unsupervised dataset
+        dataset = Load_Dataset_Unsupervised(self, ds)  # Using the unsupervised dataset loader
+
+        print("Length of the dataset:", len(dataset))
+        try:
+            first_item = dataset[0]
+            print("First item shape:", [x.shape for x in first_item])
+        except IndexError as e:
+            print("Error retrieving first item from dataset:", e)
+
+        data_loader = DataLoader(dataset=dataset, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers, drop_last=self.drop_last)
+
+        # This code snippet should be placed right after initializing the DataLoader in the `train_unsupervised` method.
+        try:
+            sample_batch = next(iter(data_loader))
+            print("Sample batch loaded successfully:", sample_batch)
+        except StopIteration:
+            print("DataLoader is empty. No data available for loading.")
+
+        # Initialize the model and optimizer
+        self.model = CDCC(self).to(self.device)
+        optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr, betas=(self.beta1, self.beta2),
+                                    weight_decay=self.weight_decay)
+        criterion_instance = contrastive_loss.InstanceLoss(self.batch_size, self.instance_temperature, self.device).to(self.device)
+        criterion_cluster = contrastive_loss.ClusterLoss(self.num_clusters, self.cluster_temperature, self.device).to(self.device)
+        
+        for epoch in range(1, self.epochs + 1):
+            self.model.train()
+            loss_epoch = self.step_epoch_unsupervised(optimizer, data_loader, criterion_instance, criterion_cluster, epoch)
+            if epoch % 10 == 0:
+                print(f"Epoch {epoch}/{self.epochs}\tLoss: {loss_epoch}")
+                cb_progress(epoch / self.epochs)
+
+    def step_epoch_unsupervised(self, optimizer, dataset, criterion_instance, criterion_cluster, epoch):
+        total_loss = 0
+        for step, (x_data, aug1, aug2, x_data_f, aug1_f, aug2_f) in enumerate(dataset):  # Notice labels are not loaded
+            optimizer.zero_grad()
+            x_data = x_data.to(torch.float32).to(self.device)
+            aug1 = aug1.to(torch.float32).to(self.device)
+            aug2 = aug2.to(torch.float32).to(self.device)
+
+            # Compute representations and contrastive losses
+            h, z_i, z_c, h_aug, z_i_aug, z_c_aug = self.model(aug1, aug2, mode='t')  # mode can be 't' or 'f'
+
+            loss_i = criterion_instance(z_i, z_i_aug)
+            loss_c = criterion_cluster(z_c, z_c_aug)
+            loss = loss_i + loss_c
+
+            loss.backward()
+            optimizer.step()
+            total_loss += loss.item()
+
+        return total_loss / len(dataset)
+
+
+    def predict_unsupervised(self, ds):
+        """
+        Predict function for unsupervised scenarios.
+        Returns embeddings or cluster assignments based on the trained model.
+        """
+        # Ensure data is in the correct shape [num_instance, in_channel, series_length]
+        data_loader = DataLoader(dataset=ds, batch_size=self.batch_size, shuffle=False,
+                                    num_workers=self.num_workers, drop_last=False)
+        
+        self.model.eval()  # Switch to evaluation mode
+        embeddings = []
+        
+        with torch.no_grad():
+            for x_data in data_loader:
+                x_data = x_data.to(torch.float32).to(self.device)
+                embedding = self.model.encode(x_data)  # Ensure your model has an 'encode' method to get embeddings
+                embeddings.append(embedding.cpu().numpy())
+
+        embeddings = np.concatenate(embeddings, axis=0)
+        return embeddings
+
 
 
 

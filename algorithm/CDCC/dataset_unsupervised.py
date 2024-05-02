@@ -7,24 +7,30 @@ from algorithm.CDCC.augmentations import DataTransform_T_unsupervised, DataTrans
 class Load_Dataset_Unsupervised(Dataset):
     def __init__(self, model_params, ds):
         super(Load_Dataset_Unsupervised, self).__init__()
+        if ds is None or not hasattr(ds, 'shape') or ds.shape[0] == 0:
+            raise ValueError("Dataset is empty or incorrectly formatted")
+
+        print(f"Initial data shape: {ds.shape}")
         X_train = ds
 
         # Normalize data
         mean = np.nanmean(X_train)
         std = np.nanstd(X_train)
         X_train = (X_train - mean) / std
+        print(f"Data shape after normalization: {X_train.shape}")
 
         # Convert to Torch tensors
         x_data = torch.from_numpy(X_train).float()
 
         # Ensure channel dimension is second
-        if x_data.shape.index(min(x_data.shape)) != 1:
+        if x_data.dim() > 1 and x_data.shape.index(min(x_data.shape)) != 1:
             x_data = x_data.permute(0, 2, 1)
-        
+        print(f"Data shape after permutation: {x_data.shape}")
+
         self.x_data = x_data
-        self.len = x_data.shape[0]
         self.x_data_f = fft(x_data).abs()
-        
+        print(f"FFT data shape: {self.x_data_f.shape}")
+
         # Apply augmentations
         self.aug1, self.aug2 = DataTransform_T_unsupervised(x_data, model_params)
         self.aug1_f, self.aug2_f = DataTransform_F_unsupervised(self.x_data_f, model_params)
@@ -34,7 +40,7 @@ class Load_Dataset_Unsupervised(Dataset):
                 self.x_data_f[index], self.aug1_f[index], self.aug2_f[index])
 
     def __len__(self):
-        return self.len
+        return self.x_data.shape[0]
 
 class MyUnsupervisedDataset(Dataset):
     def __init__(self,ds):

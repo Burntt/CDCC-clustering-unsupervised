@@ -48,21 +48,15 @@ def parse_data_unsupervised(data_dir, prefix="CBF/TRAIN"):
     if os.path.isfile(data_dir):
         with zipfile.ZipFile(data_dir, 'r') as z:
             dir_list = z.namelist()
-            print("Files in zip:", dir_list)  # Debugging line to see all files in the zip
             feature_files = [f for f in dir_list if f.startswith(prefix) and not f.endswith("_label.csv")]
-            if not feature_files:
-                raise ValueError("No training feature files found in the zip archive.")
-
             arrays = []
             for file in feature_files:
                 array = pd.read_csv(z.open(file), header=None).values
-                print(f"Loaded file {file} with shape {array.shape}")  # Debugging line to confirm files are being processed
                 arrays.append(array)
 
             if arrays:
-                X = np.stack(arrays)  # This assumes all arrays have the same shape
-                X = np.transpose(X, (0, 2, 1))
-                print("Data loaded with shape:", X.shape)
+                X = np.stack(arrays)  # Correctly stacking arrays
+                X = np.transpose(X, (0, 2, 1))  # Ensure proper shape for PyTorch: batch, channels, length
                 return X
             else:
                 raise ValueError("No arrays formed, possibly due to empty file list or read errors.")
@@ -118,7 +112,6 @@ def main():
     print("Model save path:", model_save_path)
 
     X = parse_data_unsupervised(full_path)
-    print("Data loaded with shape:", X.shape)
 
     print("Starting training...")
     algorithm.train_unsupervised(X)
