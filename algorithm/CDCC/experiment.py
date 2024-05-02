@@ -49,6 +49,7 @@ class model():
         self.add_frequency_ratio = 0.1
 
         # Parameters for the instance-level and cluster-level mapping networks
+        self.class_num = 10
         self.num_clusters = 10
         self.CNNoutput_channel = 1152
         self.feature_dim = 256
@@ -162,6 +163,7 @@ class model():
     
 
     def train_unsupervised(self, ds, cb_progress=lambda x: None):
+
         if ds is None or len(ds) == 0:
             raise ValueError("Dataset is empty or not loaded properly")
         print(f"Dataset shape: {ds.shape}")  # Confirm dataset shape
